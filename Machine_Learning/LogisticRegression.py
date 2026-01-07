@@ -1,54 +1,16 @@
-import numpy as np
-import pandas as pd
-import seaborn as sns
+# app.py
 import streamlit as st
-import matplotlib.pyplot as plt
+import pandas as pd
 import os
-
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import kagglehub
 
-
-# --------------------------------------------------
-# Page config
-# --------------------------------------------------
-st.set_page_config(
-    page_title="Logistic Regression - Telco Churn",
-    layout="centered"
-)
-
-
-# --------------------------------------------------
-# Load CSS safely
-# --------------------------------------------------
-def load_css(file):
-    base_path = os.path.dirname(__file__)
-    css_path = os.path.join(base_path, file)
-
-    if os.path.exists(css_path):
-        with open(css_path) as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css("style.css")
-
-
-# --------------------------------------------------
-# Title
-# --------------------------------------------------
-st.markdown("""
-<div class="card">
-    <h1>Logistic Regression – Telco Churn</h1>
-    <p>Predict whether a customer is likely to churn</p>
-</div>
-""", unsafe_allow_html=True)
-
-
-# --------------------------------------------------
-# Load dataset (DEPLOY SAFE)
-# --------------------------------------------------
-
+st.set_page_config(page_title="Telco Churn Predictor", layout="wide")
+st.title("Telco Customer Churn Predictor")
+st.markdown("<h4 style='text-align:center; color:purple;'>Interactive Logistic Regression Model</h4>", unsafe_allow_html=True)
 
 # 1️⃣ Load dataset from Kagglehub
 @st.cache_data
@@ -60,154 +22,107 @@ def load_data():
 
 df = load_data()
 
+# 2️⃣ Show dataset
+if st.checkbox("Show Dataset"):
+    st.subheader("First 5 rows")
+    st.dataframe(df.head())
+    st.subheader("Dataset Info")
+    st.write(df.describe())
 
+# 3️⃣ Preprocessing
+df = df.drop('customerID', axis=1)
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce').fillna(0)
 
+binary_cols = ['gender','Partner','Dependents','PhoneService','PaperlessBilling']
+le = LabelEncoder()
+for col in binary_cols:
+    df[col] = le.fit_transform(df[col])
 
-# --------------------------------------------------
-# Dataset preview
-# --------------------------------------------------
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("Dataset Preview")
-st.dataframe(df.head())
-st.markdown('</div>', unsafe_allow_html=True)
+multi_cols = ['MultipleLines','InternetService','OnlineSecurity','OnlineBackup',
+              'DeviceProtection','TechSupport','StreamingTV','StreamingMovies',
+              'Contract','PaymentMethod']
+df = pd.get_dummies(df, columns=multi_cols, drop_first=True)
 
+X = df.drop('Churn', axis=1)
+y = df['Churn']
 
-# --------------------------------------------------
-# Preprocessing
-# --------------------------------------------------
-st.subheader("Data Preprocessing")
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-df.fillna(df.mean(numeric_only=True), inplace=True)
+num_cols = ['MonthlyCharges', 'TotalCharges']
+sc = StandardScaler()
+x_train[num_cols] = sc.fit_transform(x_train[num_cols])
+x_test[num_cols] = sc.transform(x_test[num_cols])
 
-df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
-df.drop("customerID", axis=1, inplace=True)
+# 4️⃣ Train model
+model = LogisticRegression(max_iter=1000)
+model.fit(x_train, y_train)
+y_pred = model.predict(x_test)
 
-df = pd.get_dummies(df, drop_first=True)
+# 5️⃣ Model Evaluation
+st.subheader("📊 Model Metrics")
+st.markdown(f"<h3 style='text-align:center; color:green;'>Accuracy: {accuracy_score(y_test, y_pred):.2f}</h3>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align:center; color:blue;'>Confusion Matrix</h4>", unsafe_allow_html=True)
+st.dataframe(pd.DataFrame(confusion_matrix(y_test, y_pred),
+                          columns=["Predicted No", "Predicted Yes"],
+                          index=["Actual No", "Actual Yes"]))
+st.markdown("<h4 style='text-align:center; color:blue;'>Classification Report</h4>", unsafe_allow_html=True)
+st.text(classification_report(y_test, y_pred))
 
-st.success("Data preprocessing completed ✔")
+# 6️⃣ Predict new customer
+st.subheader("Predict Churn for a New Customer")
+st.markdown("Fill the customer information below:")
 
+def user_input_features():
+    gender = st.selectbox("Gender", ["Female", "Male"])
+    SeniorCitizen = st.selectbox("SeniorCitizen", [0,1])
+    Partner = st.selectbox("Partner", ["No", "Yes"])
+    Dependents = st.selectbox("Dependents", ["No", "Yes"])
+    tenure = st.number_input("Tenure (months)", 0, 100, 1)
+    PhoneService = st.selectbox("PhoneService", ["No", "Yes"])
+    PaperlessBilling = st.selectbox("PaperlessBilling", ["No", "Yes"])
+    MonthlyCharges = st.number_input("MonthlyCharges", 0.0, 500.0, 70.0)
+    TotalCharges = st.number_input("TotalCharges", 0.0, 10000.0, 2000.0)
+    InternetService = st.selectbox("InternetService", ["DSL","Fiber optic","No"])
+    Contract = st.selectbox("Contract", ["Month-to-month","One year","Two year"])
+    PaymentMethod = st.selectbox("PaymentMethod", ["Electronic check","Mailed check","Bank transfer (automatic)","Credit card (automatic)"])
+    
+    data = {
+        'gender': gender,
+        'SeniorCitizen': SeniorCitizen,
+        'Partner': Partner,
+        'Dependents': Dependents,
+        'tenure': tenure,
+        'PhoneService': PhoneService,
+        'PaperlessBilling': PaperlessBilling,
+        'MonthlyCharges': MonthlyCharges,
+        'TotalCharges': TotalCharges,
+        'InternetService': InternetService,
+        'Contract': Contract,
+        'PaymentMethod': PaymentMethod
+    }
+    return pd.DataFrame([data])
 
-# --------------------------------------------------
-# Features & target
-# --------------------------------------------------
-X = df.drop("Churn", axis=1)
-y = df["Churn"]
+input_df = user_input_features()
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+# Encode new input
+for col in binary_cols:
+    input_df[col] = le.fit_transform(input_df[col])
 
+input_df = pd.get_dummies(input_df)
+input_df = input_df.reindex(columns=X.columns, fill_value=0)
+input_df[num_cols] = sc.transform(input_df[num_cols])
 
-# --------------------------------------------------
-# Scaling
-# --------------------------------------------------
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-
-# --------------------------------------------------
-# Train Logistic Regression
-# --------------------------------------------------
-model = LogisticRegression(
-    max_iter=1000,
-    class_weight="balanced"
-)
-model.fit(X_train_scaled, y_train)
-
-st.success("Logistic Regression model trained successfully ✔")
-
-
-# --------------------------------------------------
-# Model Evaluation
-# --------------------------------------------------
-st.subheader("Model Evaluation")
-
-y_pred = model.predict(X_test_scaled)
-
-accuracy = accuracy_score(y_test, y_pred)
-st.metric("Accuracy", f"{accuracy:.3f}")
-
-st.text("Classification Report")
-st.code(classification_report(y_test, y_pred))
-
-st.text("Confusion Matrix")
-cm = confusion_matrix(y_test, y_pred)
-
-fig, ax = plt.subplots()
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-ax.set_xlabel("Predicted")
-ax.set_ylabel("Actual")
-ax.set_title("Confusion Matrix")
-
-st.pyplot(fig)
-
-
-# --------------------------------------------------
-# Simple User Prediction
-# --------------------------------------------------
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("Predict Customer Churn")
-
-tenure = st.slider(
-    "Tenure (months)",
-    0,
-    int(df["tenure"].max()),
-    12
-)
-
-monthly_charges = st.slider(
-    "Monthly Charges",
-    float(df["MonthlyCharges"].min()),
-    float(df["MonthlyCharges"].max()),
-    70.0
-)
-
-contract = st.selectbox(
-    "Contract Type",
-    ["Month-to-month", "One year", "Two year"]
-)
-
-# Create input dataframe
-user_df = pd.DataFrame([{
-    "tenure": tenure,
-    "MonthlyCharges": monthly_charges,
-    "Contract": contract
-}])
-
-# One-hot encode & align
-user_df = pd.get_dummies(user_df)
-user_df = user_df.reindex(columns=X.columns, fill_value=0)
-
-# Scale
-user_scaled = scaler.transform(user_df)
-
-# Predict
-probability = model.predict_proba(user_scaled)[0][1]
-prediction = 1 if probability >= 0.3 else 0   # lowered threshold
-
-# Risk label
-if probability < 0.3:
-    risk = "Low Risk"
-elif probability < 0.6:
-    risk = "Medium Risk"
-else:
-    risk = "High Risk"
-
-st.markdown(
-    f"""
-    <div class="prediction-box">
-        <h3>Prediction Result</h3>
-        <p>
-            <b>Churn:</b> {"Yes" if prediction == 1 else "No"}<br>
-            <b>Churn Probability:</b> {probability:.2f}<br>
-            <b>Risk Level:</b> {risk}
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
+# 7️⃣ Centered Prediction
+if st.button("Predict Churn"):
+    prediction = model.predict(input_df)[0]
+    prediction_prob = model.predict_proba(input_df)[0][1]
+    
+    st.markdown(
+        f"""
+        <div style='text-align: center; background-color:#FDEBD0; padding:25px; border-radius:15px;'>
+        <h2>Prediction: {'🛑 Churn' if prediction==1 else '✅ No Churn'}</h2>
+        <h3>Churn Probability: {prediction_prob:.2f}</h3>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )

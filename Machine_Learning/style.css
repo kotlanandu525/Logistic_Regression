@@ -2,7 +2,7 @@
     background: linear-gradient(
         135deg,
         #a3d64b 0%,
-        #4eda12 50%,
+        #9c55c4 50%,
         #33b3de 100%
     );
     min-height: 100vh;
@@ -44,3 +44,4 @@ div[data-testid="metric-container"]{
         margin-top: 15px;
 
 }
+

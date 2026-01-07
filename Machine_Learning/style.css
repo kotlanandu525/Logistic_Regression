@@ -2,9 +2,8 @@
     background: linear-gradient(
         135deg,
         #a3d64b 0%,
-        #fa9ada 50%,
-        #c65587 100%
-
+        #4eda12 50%,
+        #33b3de 100%
     );
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -43,4 +42,5 @@ div[data-testid="metric-container"]{
         font-weight: bold;
         color: chocolate;
         margin-top: 15px;
+
 }

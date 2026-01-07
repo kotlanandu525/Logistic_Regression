@@ -12,6 +12,16 @@ st.set_page_config(page_title="Telco Churn Predictor", layout="wide")
 st.title("Telco Customer Churn Predictor")
 st.markdown("<h4 style='text-align:center; color:purple;'>Interactive Logistic Regression Model</h4>", unsafe_allow_html=True)
 
+def load_css(file_name):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    css_path = os.path.join(base_dir, file_name)
+
+    try:
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("style.css not found")
+load_css("style.css")
 # 1️⃣ Load dataset from Kagglehub
 @st.cache_data
 def load_data():
@@ -126,3 +136,4 @@ if st.button("Predict Churn"):
         """,
         unsafe_allow_html=True
     )
+

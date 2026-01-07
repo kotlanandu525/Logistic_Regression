@@ -17,11 +17,11 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 st.set_page_config("Logistic Regression - Telco Churn", layout="centered")
 
 
-def load_css(file):
+@st.cache_data
+def load_data():
     base_path = os.path.dirname(__file__)
-    css_path = os.path.join(base_path, file)
-    with open(css_path) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    file_path = os.path.join(base_path, "WA_Fn-UseC_-Telco-Customer-Churn.csv")
+    return pd.read_csv(file_path)
 
 load_css("style.css")
 
@@ -191,3 +191,4 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
+

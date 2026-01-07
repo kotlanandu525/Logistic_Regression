@@ -11,80 +11,80 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
-# -----------------------------
+# --------------------------------------------------
 # Page config
-# -----------------------------
-st.set_page_config("Logistic Regression - Telco Churn", layout="centered")
+# --------------------------------------------------
+st.set_page_config(
+    page_title="Logistic Regression - Telco Churn",
+    layout="centered"
+)
 
 
-@st.cache_data
+# --------------------------------------------------
+# Load CSS safely
+# --------------------------------------------------
 def load_css(file):
-    base_path = os.path.dirname(__file__)   # directory of app.py
+    base_path = os.path.dirname(__file__)
     css_path = os.path.join(base_path, file)
-    with open(css_path) as f:
-        st.markdown(f"<style>{f.read()}</style>",unsafe_allow_html=True)
+
+    if os.path.exists(css_path):
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 load_css("style.css")
+
 
 # --------------------------------------------------
 # Title
 # --------------------------------------------------
-st.markdown(
-    """
-    <div class="card">
-        <h1>Logistic Regression - Telco Churn</h1>
-       
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<div class="card">
+    <h1>Logistic Regression – Telco Churn</h1>
+    <p>Predict whether a customer is likely to churn</p>
+</div>
+""", unsafe_allow_html=True)
+
 
 # --------------------------------------------------
-# Load data
+# Load dataset (DEPLOY SAFE)
 # --------------------------------------------------
 @st.cache_data
 def load_data():
     base_path = os.path.dirname(__file__)
     file_path = os.path.join(base_path, "WA_Fn-UseC_-Telco-Customer-Churn.csv")
     return pd.read_csv(file_path)
-df=load_data()
+
+df = load_data()
 
 
-
-# -----------------------------
+# --------------------------------------------------
 # Dataset preview
-# -----------------------------
+# --------------------------------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("Dataset Preview")
 st.dataframe(df.head())
 st.markdown('</div>', unsafe_allow_html=True)
 
 
-# -----------------------------
+# --------------------------------------------------
 # Preprocessing
-# -----------------------------
+# --------------------------------------------------
 st.subheader("Data Preprocessing")
 
-# Convert TotalCharges to numeric
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-
-# Handle missing values
 df.fillna(df.mean(numeric_only=True), inplace=True)
 
-# Encode target
 df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
-
-# Drop customerID
 df.drop("customerID", axis=1, inplace=True)
 
-# One-hot encode categorical features
 df = pd.get_dummies(df, drop_first=True)
 
 st.success("Data preprocessing completed ✔")
 
 
-# -----------------------------
-# Features & Target
-# -----------------------------
+# --------------------------------------------------
+# Features & target
+# --------------------------------------------------
 X = df.drop("Churn", axis=1)
 y = df["Churn"]
 
@@ -93,26 +93,29 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
-# -----------------------------
+# --------------------------------------------------
 # Scaling
-# -----------------------------
+# --------------------------------------------------
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 
-# -----------------------------
+# --------------------------------------------------
 # Train Logistic Regression
-# -----------------------------
-model = LogisticRegression(max_iter=1000)
+# --------------------------------------------------
+model = LogisticRegression(
+    max_iter=1000,
+    class_weight="balanced"
+)
 model.fit(X_train_scaled, y_train)
 
 st.success("Logistic Regression model trained successfully ✔")
 
 
-# -----------------------------
-# Evaluation
-# -----------------------------
+# --------------------------------------------------
+# Model Evaluation
+# --------------------------------------------------
 st.subheader("Model Evaluation")
 
 y_pred = model.predict(X_test_scaled)
@@ -133,13 +136,14 @@ ax.set_ylabel("Actual")
 ax.set_title("Confusion Matrix")
 
 st.pyplot(fig)
-# -----------------------------
-# Simple User Prediction
-# -----------------------------
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("Predict Customer Churn (Simple Input)")
 
-# --- User Inputs ---
+
+# --------------------------------------------------
+# Simple User Prediction
+# --------------------------------------------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.subheader("Predict Customer Churn")
+
 tenure = st.slider(
     "Tenure (months)",
     0,
@@ -159,34 +163,40 @@ contract = st.selectbox(
     ["Month-to-month", "One year", "Two year"]
 )
 
-# --- Create minimal input dataframe ---
+# Create input dataframe
 user_df = pd.DataFrame([{
     "tenure": tenure,
     "MonthlyCharges": monthly_charges,
     "Contract": contract
 }])
 
-# --- One-hot encode ---
+# One-hot encode & align
 user_df = pd.get_dummies(user_df)
-
-# --- Align with training features ---
 user_df = user_df.reindex(columns=X.columns, fill_value=0)
 
-# --- Scale ---
+# Scale
 user_scaled = scaler.transform(user_df)
 
-# --- Predict ---
-prediction = model.predict(user_scaled)[0]
+# Predict
 probability = model.predict_proba(user_scaled)[0][1]
+prediction = 1 if probability >= 0.3 else 0   # lowered threshold
 
-# --- Output ---
+# Risk label
+if probability < 0.3:
+    risk = "Low Risk"
+elif probability < 0.6:
+    risk = "Medium Risk"
+else:
+    risk = "High Risk"
+
 st.markdown(
     f"""
     <div class="prediction-box">
         <h3>Prediction Result</h3>
         <p>
             <b>Churn:</b> {"Yes" if prediction == 1 else "No"}<br>
-            <b>Churn Probability:</b> {probability:.2f}
+            <b>Churn Probability:</b> {probability:.2f}<br>
+            <b>Risk Level:</b> {risk}
         </p>
     </div>
     """,
@@ -194,7 +204,3 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
-
-
-
-

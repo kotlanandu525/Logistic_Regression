@@ -18,33 +18,35 @@ st.set_page_config("Logistic Regression - Telco Churn", layout="centered")
 
 
 @st.cache_data
-def load_data():
-    base_path = os.path.dirname(__file__)
-    file_path = os.path.join(base_path, "WA_Fn-UseC_-Telco-Customer-Churn.csv")
-    return pd.read_csv(file_path)
-
+def load_css(file):
+    base_path = os.path.dirname(__file__)   # directory of app.py
+    css_path = os.path.join(base_path, file)
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>",unsafe_allow_html=True)
 load_css("style.css")
 
-
-# -----------------------------
+# --------------------------------------------------
 # Title
-# -----------------------------
-st.markdown("""
-<div class="card">
-    <h1>Logistic Regression</h1>
-    <p>Predict <b>Customer Churn</b> using Telco Dataset</p>
-</div>
-""", unsafe_allow_html=True)
+# --------------------------------------------------
+st.markdown(
+    """
+    <div class="card">
+        <h1>Linear Regression</h1>
+        <p>Predict <b>Tip Amount</b> from <b>Total Bill</b></p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-
-# -----------------------------
-# Load data (FIXED)
-# -----------------------------
+# --------------------------------------------------
+# Load data
+# --------------------------------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("WA_Fn-UseC_-Telco-Customer-Churn (2).csv")
+    return sns.load_dataset("WA_Fn-UseC_-Telco-Customer-Churn (2).csv")
 
 df = load_data()
+
 
 
 # -----------------------------
@@ -191,4 +193,5 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
+
 

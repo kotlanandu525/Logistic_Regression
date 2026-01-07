@@ -48,13 +48,19 @@ st.markdown("""
 # --------------------------------------------------
 # Load dataset (DEPLOY SAFE)
 # --------------------------------------------------
+
+
+# 1️⃣ Load dataset from Kagglehub
 @st.cache_data
 def load_data():
-    base_path = os.path.dirname(__file__)
-    file_path = os.path.join(base_path, "WA_Fn-UseC_-Telco-Customer-Churn.csv")
-    return pd.read_csv(file_path)
+    # Download dataset from Kagglehub
+    path = kagglehub.dataset_download("blastchar/telco-customer-churn")
+    df = pd.read_csv(os.path.join(path, "WA_Fn-UseC_-Telco-Customer-Churn.csv"))
+    return df
 
 df = load_data()
+
+
 
 
 # --------------------------------------------------
@@ -204,3 +210,4 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
+

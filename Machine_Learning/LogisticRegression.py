@@ -31,8 +31,8 @@ load_css("style.css")
 st.markdown(
     """
     <div class="card">
-        <h1>Linear Regression</h1>
-        <p>Predict <b>Tip Amount</b> from <b>Total Bill</b></p>
+        <h1>Logistic Regression - Telco Churn</h1>
+       
     </div>
     """,
     unsafe_allow_html=True
@@ -193,5 +193,6 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 

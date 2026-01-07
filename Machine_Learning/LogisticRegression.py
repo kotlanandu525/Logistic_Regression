@@ -43,9 +43,10 @@ st.markdown(
 # --------------------------------------------------
 @st.cache_data
 def load_data():
-    return sns.load_dataset("WA_Fn-UseC_-Telco-Customer-Churn (2).csv")
-
-df = load_data()
+    base_path = os.path.dirname(__file__)
+    file_path = os.path.join(base_path, "WA_Fn-UseC_-Telco-Customer-Churn.csv")
+    return pd.read_csv(file_path)
+df=load_data()
 
 
 
@@ -193,6 +194,7 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
